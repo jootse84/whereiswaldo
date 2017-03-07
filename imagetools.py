@@ -26,7 +26,6 @@ class ImageTools():
     """
     _pos_path = './training/positives/'
     _neg_path = './training/negatives/'
-    _waldo_img = './training/positives/solo_waldo2.png'
     GREYSCALE = 'greyscale'
     HISTOGRAM = 'histogram'
 
@@ -56,6 +55,9 @@ class ImageTools():
         rgbs = [fn(channel) for channel in cv2.split(image)]
         return np.reshape(rgbs, -1).astype(int)
 
+    def write(self, name, img):
+        cv2.imwrite(name, img)
+
     def read(self, path):
         try:
             is_image = lambda x: imghdr.what(x) in ['jpg', 'jpeg', 'png']
@@ -65,3 +67,44 @@ class ImageTools():
             raise IOError("'{}' is not a path to an image".format(path))
         return self.imread_fn(self._read(path))
 
+
+class Puzzle:
+    _img_ref = './training/positives/solo_waldo2.png'
+
+    def __init__(self, img_type):
+        self.imtools = ImageTools(img_type)
+        self.puzzle = cv2.imread("nobodys.jpg")
+        (p_height, p_width, p_channels) = self.puzzle.shape
+
+        ref = cv2.imread(self._img_ref)
+        (height, width, channels) = ref.shape
+        self.w = width
+        self.h = height
+
+        self.decr_top = width / 2
+        self.decr_left = height / 2
+        self.top = p_height - self.h
+        self.reset_left = p_width - self.w
+        self.left = self.reset_left + self.decr_left
+
+    def __iter__(self):
+        return self
+
+    def _crop(self):
+        # Crop from img[y: y + height, x: x + width]
+        x = max(0, self.left)
+        y = max(0, self.top)
+        return self.puzzle[y : y + self.h, x : x + self.w]
+
+    def next(self):
+        if self.left < 0:
+            self.top -= self.decr_left
+            self.left = self.reset_left
+        else:
+            self.left -= self.decr_left
+
+        if (self.top < 0 and self.left < 0):
+            self.imtools.write("img.png", self._crop())
+            raise StopIteration
+
+        return self.imtools.imread_fn(self._crop())
