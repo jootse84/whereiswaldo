@@ -17,7 +17,7 @@ class SVC():
         self.classifier.fit(self.X, self.y)
 
     def test_classifier(self):
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=0.3, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=0.3, stratify=self.y, random_state=42)
         self.classifier.fit(X_train, y_train)
         y_predicted = self.classifier.predict(X_test)
         print('Mean: %f' % np.mean(y_test - y_predicted))
